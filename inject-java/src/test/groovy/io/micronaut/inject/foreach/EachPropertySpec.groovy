@@ -467,6 +467,35 @@ class EachPropertySpec extends Specification {
         props.inner.any { it.age == 30 }
     }
 
+    void "test field injection eachproperty nested inner class of config props"() {
+        given:
+        ApplicationContext applicationContext = new DefaultApplicationContext("test")
+        applicationContext.environment.addPropertySource(PropertySource.of('test', [
+            'outer-field-nested.name': 'Outer',
+            'outer-field-nested.inner.sally.age': 20,
+            'outer-field-nested.inner.sally.nested.one.name': "joe",
+            'outer-field-nested.inner.sally.nested.two.name': "jim",
+            'outer-field-nested.inner.joe.age': 30,
+            'outer-field-nested.inner.joe.nested.one.name': "jessie"
+        ]))
+        applicationContext.start()
+
+        when:
+        NestedFieldProperties props = applicationContext.getBean(NestedFieldProperties)
+
+        then:
+        props.name == 'Outer'
+        props.inner.size() == 2
+        props.inner.any { it.age == 20}
+        props.inner.any { it.age == 30 }
+
+        NestedFieldProperties.InnerEach t1 = props.inner.find {it.age == 20}
+        NestedFieldProperties.InnerEach t2 = props.inner.find {it.age == 30}
+        t1.nested.any{it.name == "joe"}
+        t1.nested.any{it.name == "jim"}
+        t2.nested.any{it.name == "jessie"}
+    }
+
     void "test eachproperty list inner class of config props"() {
         given:
         ApplicationContext applicationContext = new DefaultApplicationContext("test")
